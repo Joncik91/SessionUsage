@@ -68,6 +68,33 @@ let package = Package(
                 ]),
         ]
 
+        #if os(Linux)
+        targets.append(contentsOf: [
+            // SwiftPM system-library targets are the documented way to wrap
+            // system-installed C libraries for package consumers.
+            // Source: https://docs.swift.org/package-manager/PackageDescription/Target/systemLibrary(name:path:pkgConfig:providers:swiftSettings:cSettings:cxxSettings:linkerSettings:)
+            .systemLibrary(
+                name: "CGtk3",
+                pkgConfig: "gtk+-3.0",
+                providers: [
+                    .apt(["libgtk-3-dev"]),
+                ]),
+            .systemLibrary(
+                name: "CAyatanaAppIndicator3",
+                pkgConfig: "ayatana-appindicator3-0.1",
+                providers: [
+                    .apt(["libayatana-appindicator3-dev"]),
+                ]),
+            .executableTarget(
+                name: "CodexBarLinux",
+                dependencies: [
+                    "CGtk3",
+                    "CAyatanaAppIndicator3",
+                ],
+                path: "Sources/CodexBarLinux"),
+        ])
+        #endif
+
         #if os(macOS)
         targets.append(contentsOf: [
             .executableTarget(

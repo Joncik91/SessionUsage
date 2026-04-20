@@ -7,7 +7,8 @@ Tiny macOS 14+ menu bar app that keeps your Codex, Claude, Cursor, Gemini, Antig
 ## Install
 
 ### Requirements
-- macOS 14+ (Sonoma)
+- macOS 14+ (Sonoma) for the native menu bar app
+- Linux with GTK 3 + Ayatana AppIndicator dev packages for the tray MVP in this fork
 
 ### GitHub Releases
 Download: <https://github.com/steipete/CodexBar/releases>
@@ -17,12 +18,22 @@ Download: <https://github.com/steipete/CodexBar/releases>
 brew install --cask steipete/tap/codexbar
 ```
 
-### Linux (CLI only)
+### Linux (CLI + tray MVP in this fork)
 ```bash
 brew install steipete/tap/codexbar
 ```
 Or download `CodexBarCLI-v<tag>-linux-<arch>.tar.gz` from GitHub Releases.
 Linux support via Omarchy: community Waybar module and TUI, driven by the `codexbar` executable.
+
+Native tray MVP from source:
+```bash
+sudo apt install libgtk-3-dev libayatana-appindicator3-dev
+swift build --product CodexBarCLI --product CodexBarLinux
+./.build/debug/CodexBarLinux
+```
+
+`CodexBarLinux` looks for `CodexBarCLI` next to the tray executable first, then falls back to `codexbar`/`CodexBarCLI` on `PATH`. You can also point it at a custom binary with `CODEXBAR_CLI=/path/to/CodexBarCLI`.
+Current MVP behavior: the tray mirrors `CodexBarCLI --format text --no-color`, refreshes every two minutes, and adds tray-native **Refresh** and **Quit** actions.
 
 ### First run
 - Open Settings → Providers and enable what you use.
@@ -65,6 +76,7 @@ The menu bar icon is a tiny two-bar meter:
 - Merge Icons mode to combine providers into one status item + switcher, with an optional Overview tab for up to three providers.
 - Refresh cadence presets (manual, 1m, 2m, 5m, 15m).
 - Bundled CLI (`codexbar`) for scripts and CI (including `codexbar cost --provider codex|claude` for local cost usage); Linux CLI builds available.
+- Experimental Linux tray MVP target (`CodexBarLinux`) that mirrors the CLI text output into an AppIndicator menu.
 - WidgetKit widget mirrors the menu card snapshot.
 - Privacy-first: on-device parsing by default; browser cookies are opt-in and reused (no passwords stored).
 
@@ -114,6 +126,13 @@ swift build -c release          # or debug for development
 ./Scripts/package_app.sh        # builds CodexBar.app in-place
 CODEXBAR_SIGNING=adhoc ./Scripts/package_app.sh  # ad-hoc signing (no Apple Developer account)
 open CodexBar.app
+```
+
+Linux tray MVP:
+```bash
+sudo apt install libgtk-3-dev libayatana-appindicator3-dev
+swift build --product CodexBarCLI --product CodexBarLinux
+./.build/debug/CodexBarLinux
 ```
 
 Dev loop:
