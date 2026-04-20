@@ -36,6 +36,14 @@ public struct PathDebugSnapshot: Equatable, Sendable {
 }
 
 public enum BinaryLocator {
+    static func isRunnableBinaryPath(_ path: String, fileManager: FileManager = .default) -> Bool {
+        var isDirectory: ObjCBool = false
+        guard fileManager.fileExists(atPath: path, isDirectory: &isDirectory), !isDirectory.boolValue else {
+            return false
+        }
+        return fileManager.isExecutableFile(atPath: path)
+    }
+
     public static func resolveClaudeBinary(
         env: [String: String] = ProcessInfo.processInfo.environment,
         loginPATH: [String]? = LoginShellPathCache.shared.current,
@@ -52,7 +60,7 @@ public enum BinaryLocator {
             loginPATH: loginPATH,
             commandV: commandV,
             aliasResolver: aliasResolver,
-            wellKnownPaths: self.claudeWellKnownPaths(home: home),
+            wellKnownPaths: self.claudeWellKnownPaths(home: home, fileManager: fileManager),
             fileManager: fileManager,
             home: home)
     }
@@ -60,9 +68,10 @@ public enum BinaryLocator {
     /// Well-known installation paths for the Claude CLI binary.
     /// Covers Anthropic's native installer (`~/.local/bin`), the `claude migrate-installer`
     /// self-updating location (`~/.claude/local`), the legacy per-user installer
-    /// (`~/.claude/bin`), Homebrew, and the macOS Terminal installer (cmux.app).
-    static func claudeWellKnownPaths(home: String) -> [String] {
-        [
+    /// (`~/.claude/bin`), the download cache fallback (`~/.claude/downloads/claude-*`),
+    /// Homebrew, and the macOS Terminal installer (cmux.app).
+    static func claudeWellKnownPaths(home: String, fileManager: FileManager = .default) -> [String] {
+        var paths = [
             "\(home)/.local/bin/claude",
             "\(home)/.claude/local/claude",
             "\(home)/.claude/bin/claude",
@@ -70,6 +79,32 @@ public enum BinaryLocator {
             "/usr/local/bin/claude",
             "/Applications/cmux.app/Contents/Resources/bin/claude",
         ]
+        if let downloaded = self.latestClaudeDownloadedBinary(home: home, fileManager: fileManager) {
+            paths.insert(downloaded, at: 3)
+        }
+        return paths
+    }
+
+    private static func latestClaudeDownloadedBinary(home: String, fileManager: FileManager) -> String? {
+        let downloadsPath = "\(home)/.claude/downloads"
+        guard let entries = try? fileManager.contentsOfDirectory(atPath: downloadsPath) else {
+            return nil
+        }
+
+        let candidates = entries
+            .filter { $0.hasPrefix("claude-") }
+            .sorted { lhs, rhs in
+                lhs.compare(rhs, options: .numeric) == .orderedDescending
+            }
+
+        for entry in candidates {
+            let candidate = "\(downloadsPath)/\(entry)"
+            if fileManager.isExecutableFile(atPath: candidate) {
+                return candidate
+            }
+        }
+
+        return nil
     }
 
     public static func resolveCodexBinary(
@@ -146,7 +181,7 @@ public enum BinaryLocator {
     {
         // swiftlint:enable function_parameter_count
         // 1) Explicit override
-        if let override = env[overrideKey], fileManager.isExecutableFile(atPath: override) {
+        if let override = env[overrideKey], self.isRunnableBinaryPath(override, fileManager: fileManager) {
             return override
         }
 
@@ -169,14 +204,14 @@ public enum BinaryLocator {
 
         // 4) Interactive login shell lookup (captures nvm/fnm/mise paths from .zshrc/.bashrc)
         if let shellHit = commandV(name, env["SHELL"], 2.0, fileManager),
-           fileManager.isExecutableFile(atPath: shellHit)
+           self.isRunnableBinaryPath(shellHit, fileManager: fileManager)
         {
             return shellHit
         }
 
         // 4b) Alias fallback (login shell); only attempt after all standard lookups fail.
         if let aliasHit = aliasResolver(name, env["SHELL"], 2.0, fileManager, home),
-           fileManager.isExecutableFile(atPath: aliasHit)
+           self.isRunnableBinaryPath(aliasHit, fileManager: fileManager)
         {
             return aliasHit
         }
@@ -184,7 +219,7 @@ public enum BinaryLocator {
         // 5) Well-known installation paths (e.g. cmux.app bundle, ~/.claude/bin)
         // macOS apps launched from Finder may not inherit the user's shell PATH,
         // so check common install locations that the shell-based lookups above may miss.
-        for candidate in wellKnownPaths where fileManager.isExecutableFile(atPath: candidate) {
+        for candidate in wellKnownPaths where self.isRunnableBinaryPath(candidate, fileManager: fileManager) {
             return candidate
         }
 
@@ -200,7 +235,7 @@ public enum BinaryLocator {
     private static func find(_ binary: String, in paths: [String], fileManager: FileManager) -> String? {
         for path in paths where !path.isEmpty {
             let candidate = "\(path.hasSuffix("/") ? String(path.dropLast()) : path)/\(binary)"
-            if fileManager.isExecutableFile(atPath: candidate) {
+            if self.isRunnableBinaryPath(candidate, fileManager: fileManager) {
                 return candidate
             }
         }

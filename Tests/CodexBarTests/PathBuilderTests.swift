@@ -262,6 +262,26 @@ struct PathBuilderTests {
     }
 
     @Test
+    func `resolves claude from downloaded installer cache when shims are missing`() {
+        let downloadedPath = "/home/test/.claude/downloads/claude-2.1.101-linux-x64"
+        let fm = MockFileManager(
+            executables: [downloadedPath],
+            directories: ["/home/test/.local/bin/claude"],
+            directoryEntries: ["/home/test/.claude/downloads": ["claude-2.1.101-linux-x64"]])
+        let commandV: (String, String?, TimeInterval, FileManager) -> String? = { _, _, _, _ in nil }
+        let aliasResolver: (String, String?, TimeInterval, FileManager, String) -> String? = { _, _, _, _, _ in nil }
+
+        let resolved = BinaryLocator.resolveClaudeBinary(
+            env: ["SHELL": "/bin/zsh"],
+            loginPATH: nil,
+            commandV: commandV,
+            aliasResolver: aliasResolver,
+            fileManager: fm,
+            home: "/home/test")
+        #expect(resolved == downloadedPath)
+    }
+
+    @Test
     func `prefers migrated local claude path over legacy home dir path`() {
         let migratedPath = "/Users/test/.claude/local/claude"
         let legacyPath = "/Users/test/.claude/bin/claude"
@@ -360,12 +380,44 @@ struct PathBuilderTests {
 
 private final class MockFileManager: FileManager {
     private let executables: Set<String>
+    private let directories: Set<String>
+    private let directoryEntries: [String: [String]]
 
-    init(executables: Set<String>) {
+    init(
+        executables: Set<String>,
+        directories: Set<String> = [],
+        directoryEntries: [String: [String]] = [:])
+    {
         self.executables = executables
+        self.directories = directories
+        self.directoryEntries = directoryEntries
     }
 
     override func isExecutableFile(atPath path: String) -> Bool {
-        self.executables.contains(path)
+        self.executables.contains(path) || self.directories.contains(path)
+    }
+
+    override func fileExists(atPath path: String, isDirectory: UnsafeMutablePointer<ObjCBool>?) -> Bool {
+        if self.directories.contains(path) {
+            isDirectory?.pointee = true
+            return true
+        }
+        if self.executables.contains(path) {
+            isDirectory?.pointee = false
+            return true
+        }
+        if self.directoryEntries[path] != nil {
+            isDirectory?.pointee = true
+            return true
+        }
+        isDirectory?.pointee = false
+        return false
+    }
+
+    override func contentsOfDirectory(atPath path: String) throws -> [String] {
+        if let entries = self.directoryEntries[path] {
+            return entries
+        }
+        throw NSError(domain: NSCocoaErrorDomain, code: NSFileReadNoSuchFileError)
     }
 }

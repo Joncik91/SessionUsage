@@ -33,7 +33,7 @@ swift build --product CodexBarCLI --product CodexBarLinux
 ```
 
 `CodexBarLinux` looks for `CodexBarCLI` next to the tray executable first, then falls back to `codexbar`/`CodexBarCLI` on `PATH`. You can also point it at a custom binary with `CODEXBAR_CLI=/path/to/CodexBarCLI`.
-Current MVP behavior: the tray mirrors `CodexBarCLI --format text --no-color`, refreshes every two minutes, and adds tray-native **Refresh** and **Quit** actions.
+Current MVP behavior: the tray mirrors `CodexBarCLI --format text --no-color`, uses the project icon when available, formats provider headers as menu sections, refreshes every two minutes, and adds tray-native **Refresh** and **Quit** actions.
 
 ### First run
 - Open Settings → Providers and enable what you use.

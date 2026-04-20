@@ -3,6 +3,7 @@ import Foundation
 public enum ProviderTokenSource: String, Sendable {
     case environment
     case authFile
+    case ghCLI
 }
 
 public struct ProviderTokenResolution: Sendable {
@@ -86,7 +87,20 @@ public enum ProviderTokenResolver {
     public static func copilotResolution(
         environment: [String: String] = ProcessInfo.processInfo.environment) -> ProviderTokenResolution?
     {
-        self.resolveEnv(self.cleaned(environment["COPILOT_API_TOKEN"]))
+        self.copilotResolution(environment: environment, ghTokenProvider: Self.copilotGitHubCLIToken)
+    }
+
+    static func copilotResolution(
+        environment: [String: String],
+        ghTokenProvider: ([String: String]) -> String?) -> ProviderTokenResolution?
+    {
+        if let resolution = self.resolveEnv(self.cleaned(environment["COPILOT_API_TOKEN"])) {
+            return resolution
+        }
+        if let token = self.cleaned(ghTokenProvider(environment)) {
+            return ProviderTokenResolution(token: token, source: .ghCLI)
+        }
+        return nil
     }
 
     public static func minimaxTokenResolution(
@@ -195,5 +209,67 @@ public enum ProviderTokenResolver {
     private static func resolveEnv(_ token: String?) -> ProviderTokenResolution? {
         guard let token else { return nil }
         return ProviderTokenResolution(token: token, source: .environment)
+    }
+
+    private static func copilotGitHubCLIToken(environment: [String: String]) -> String? {
+        guard let ghBinary = self.resolveGitHubCLIBinary(environment: environment) else {
+            return nil
+        }
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: ghBinary)
+        process.arguments = ["auth", "token"]
+
+        var processEnvironment = ProcessInfo.processInfo.environment
+        processEnvironment.merge(environment) { _, new in new }
+        process.environment = processEnvironment
+
+        let stdout = Pipe()
+        process.standardOutput = stdout
+        process.standardError = Pipe()
+
+        do {
+            try process.run()
+        } catch {
+            return nil
+        }
+
+        process.waitUntilExit()
+        guard process.terminationStatus == 0 else { return nil }
+
+        let data = stdout.fileHandleForReading.readDataToEndOfFile()
+        return String(data: data, encoding: .utf8)
+    }
+
+    private static func resolveGitHubCLIBinary(
+        environment: [String: String],
+        fileManager: FileManager = .default) -> String?
+    {
+        if let existingPATH = environment["PATH"],
+           let pathHit = self.findExecutable(
+               "gh",
+               in: existingPATH.split(separator: ":").map(String.init),
+               fileManager: fileManager)
+        {
+            return pathHit
+        }
+
+        let fallback = [
+            "/usr/local/bin",
+            "/usr/bin",
+            "/bin",
+            "/snap/bin",
+        ]
+        return self.findExecutable("gh", in: fallback, fileManager: fileManager)
+    }
+
+    private static func findExecutable(_ binary: String, in paths: [String], fileManager: FileManager) -> String? {
+        for path in paths where !path.isEmpty {
+            let candidate = "\(path.hasSuffix("/") ? String(path.dropLast()) : path)/\(binary)"
+            if fileManager.isExecutableFile(atPath: candidate) {
+                return candidate
+            }
+        }
+        return nil
     }
 }

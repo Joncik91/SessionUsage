@@ -137,7 +137,7 @@ public enum ClaudeCLIResolver {
     {
         #if DEBUG
         if let override = self.resolvedBinaryPathOverrideForTesting {
-            return FileManager.default.isExecutableFile(atPath: override) ? override : nil
+            return BinaryLocator.isRunnableBinaryPath(override) ? override : nil
         }
         #endif
 
@@ -147,7 +147,7 @@ public enum ClaudeCLIResolver {
                 normalizedEnvironment.removeValue(forKey: "CLAUDE_CLI_PATH")
             } else {
                 normalizedEnvironment["CLAUDE_CLI_PATH"] = override
-                if FileManager.default.isExecutableFile(atPath: override) {
+                if BinaryLocator.isRunnableBinaryPath(override) {
                     return override
                 }
             }

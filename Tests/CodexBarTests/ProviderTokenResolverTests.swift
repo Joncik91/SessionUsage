@@ -16,6 +16,28 @@ struct ProviderTokenResolverTests {
         let env = ["COPILOT_API_TOKEN": "  token  "]
         let resolution = ProviderTokenResolver.copilotResolution(environment: env)
         #expect(resolution?.token == "token")
+        #expect(resolution?.source == .environment)
+    }
+
+    @Test
+    func `copilot resolution falls back to gh auth token`() {
+        let resolution = ProviderTokenResolver.copilotResolution(
+            environment: [:],
+            ghTokenProvider: { _ in "  gh-token  " })
+
+        #expect(resolution?.token == "gh-token")
+        #expect(resolution?.source == .ghCLI)
+    }
+
+    @Test
+    func `copilot resolution prefers environment token over gh auth token`() {
+        let env = ["COPILOT_API_TOKEN": "env-token"]
+        let resolution = ProviderTokenResolver.copilotResolution(
+            environment: env,
+            ghTokenProvider: { _ in "gh-token" })
+
+        #expect(resolution?.token == "env-token")
+        #expect(resolution?.source == .environment)
     }
 
     @Test
