@@ -87,7 +87,7 @@ public enum ProviderTokenResolver {
     public static func copilotResolution(
         environment: [String: String] = ProcessInfo.processInfo.environment) -> ProviderTokenResolution?
     {
-        self.copilotResolution(environment: environment, ghTokenProvider: Self.copilotGitHubCLIToken)
+        self.copilotResolution(environment: environment, ghTokenProvider: self.copilotGitHubCLIToken)
     }
 
     static func copilotResolution(

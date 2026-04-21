@@ -1,32 +1,33 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 set -euo pipefail
 
-# Simple script to launch CodexBar (kills existing instance first)
-# Usage: ./Scripts/launch.sh
-
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-APP_PATH="$PROJECT_ROOT/CodexBar.app"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+TRAY_BIN="${PROJECT_ROOT}/.build/debug/CodexBarLinux"
+CLI_BIN="${PROJECT_ROOT}/.build/debug/CodexBarCLI"
+SWIFTLY_ENV="${SWIFTLY_HOME_DIR:-$HOME/.local/share/swiftly}/env.sh"
 
-echo "==> Killing existing CodexBar instances"
-pkill -x CodexBar || pkill -f CodexBar.app || true
-sleep 0.5
+if [[ -f "${SWIFTLY_ENV}" ]]; then
+    # shellcheck source=/dev/null
+    source "${SWIFTLY_ENV}"
+    hash -r
+fi
 
-if [[ ! -d "$APP_PATH" ]]; then
-    echo "ERROR: CodexBar.app not found at $APP_PATH"
-    echo "Run ./Scripts/package_app.sh first to build the app"
+find_running_pids() {
+    pgrep -f "${PROJECT_ROOT}/\\.build/(debug|release)/CodexBarLinux" || true
+}
+
+mapfile -t running_pids < <(find_running_pids | sort -u)
+for pid in "${running_pids[@]}"; do
+    kill "${pid}" 2>/dev/null || true
+done
+
+if [[ ! -x "${TRAY_BIN}" || ! -x "${CLI_BIN}" ]]; then
+    echo "ERROR: Linux binaries are missing."
+    echo "Run ./Scripts/compile_and_run.sh first."
     exit 1
 fi
 
-echo "==> Launching CodexBar from $APP_PATH"
-open -n "$APP_PATH"
-
-# Wait a moment and check if it's running
-sleep 1
-if pgrep -x CodexBar > /dev/null; then
-    echo "OK: CodexBar is running."
-else
-    echo "ERROR: App exited immediately. Check crash logs in Console.app (User Reports)."
-    exit 1
-fi
-
+echo "==> Launching CodexBarLinux"
+CODEXBAR_CLI="${CLI_BIN}" exec "${TRAY_BIN}"

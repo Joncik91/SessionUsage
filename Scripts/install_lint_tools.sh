@@ -39,6 +39,7 @@ install_zip_binary() {
   local url="$2"
   local expected_sha="$3"
   local binary_name="$4"
+  local install_name="${5:-$binary_name}"
 
   local tmp_zip
   tmp_zip="$(mktemp -t "${label}.XXXX")"
@@ -71,7 +72,7 @@ install_zip_binary() {
     fail "${label} binary '${binary_name}' not found in archive"
   fi
 
-  install -m 0755 "$extracted_path" "${BIN_DIR}/${binary_name}"
+  install -m 0755 "$extracted_path" "${BIN_DIR}/${install_name}"
 
   rm -f "$tmp_zip"
   rm -rf "$tmp_dir"
@@ -117,7 +118,7 @@ case "$OS" in
     # SHA256 is intentionally only enforced for the macOS CI path.
     # If we later run lint on Linux CI, add pinned SHAs here as well.
     log "WARN: Linux SHA256 verification not configured for ${ARCH}; installing anyway."
-    install_zip_binary "SwiftFormat ${SWIFTFORMAT_VERSION}" "$SWIFTFORMAT_URL" "" "swiftformat"
+    install_zip_binary "SwiftFormat ${SWIFTFORMAT_VERSION}" "$SWIFTFORMAT_URL" "" "swiftformat_linux" "swiftformat"
     install_zip_binary "SwiftLint ${SWIFTLINT_VERSION}" "$SWIFTLINT_URL" "" "swiftlint"
     ;;
   *)

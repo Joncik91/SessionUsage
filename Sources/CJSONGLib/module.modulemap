@@ -1,0 +1,4 @@
+module CJSONGLib [system] {
+    header "shim.h"
+    export *
+}
