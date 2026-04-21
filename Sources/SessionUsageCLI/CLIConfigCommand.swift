@@ -2,7 +2,7 @@ import CodexBarCore
 import Commander
 import Foundation
 
-extension CodexBarCLI {
+extension SessionUsageCLI {
     static func runConfigValidate(_ values: ParsedValues) {
         let output = CLIOutputPreferences.from(values: values)
         let config = Self.loadConfig(output: output)

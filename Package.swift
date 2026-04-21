@@ -4,15 +4,17 @@ import Foundation
 import PackageDescription
 
 let sweetCookieKitPath = "../SweetCookieKit"
+let packageEnvironment = ProcessInfo.processInfo.environment
 let useLocalSweetCookieKit =
-    ProcessInfo.processInfo.environment["CODEXBAR_USE_LOCAL_SWEETCOOKIEKIT"] == "1"
+    (packageEnvironment["SESSIONUSAGE_USE_LOCAL_SWEETCOOKIEKIT"]
+        ?? packageEnvironment["CODEXBAR_USE_LOCAL_SWEETCOOKIEKIT"]) == "1"
 let sweetCookieKitDependency: Package.Dependency =
     useLocalSweetCookieKit && FileManager.default.fileExists(atPath: sweetCookieKitPath)
     ? .package(path: sweetCookieKitPath)
     : .package(url: "https://github.com/steipete/SweetCookieKit", from: "0.4.0")
 
 let package = Package(
-    name: "CodexBar",
+    name: "SessionUsage",
     dependencies: [
         .package(url: "https://github.com/steipete/Commander", from: "0.2.1"),
         .package(url: "https://github.com/apple/swift-log", from: "1.12.0"),
@@ -43,18 +45,18 @@ let package = Package(
                 "CodexBarMacros",
             ]),
         .executableTarget(
-            name: "CodexBarCLI",
+            name: "SessionUsageCLI",
             dependencies: [
                 "CodexBarCore",
                 .product(name: "Commander", package: "Commander"),
             ],
-            path: "Sources/CodexBarCLI",
+            path: "Sources/SessionUsageCLI",
             swiftSettings: [
                 .enableUpcomingFeature("StrictConcurrency"),
             ]),
         .testTarget(
-            name: "CodexBarLinuxTests",
-            dependencies: ["CodexBarCore", "CodexBarCLI"],
+            name: "SessionUsageLinuxTests",
+            dependencies: ["CodexBarCore", "SessionUsageCLI"],
             path: "TestsLinux",
             swiftSettings: [
                 .enableUpcomingFeature("StrictConcurrency"),
@@ -82,11 +84,11 @@ let package = Package(
                 .apt(["libjson-glib-dev"]),
             ]),
         .executableTarget(
-            name: "CodexBarLinux",
+            name: "SessionUsage",
             dependencies: [
                 "CGtk3",
                 "CAyatanaAppIndicator3",
                 "CJSONGLib",
             ],
-            path: "Sources/CodexBarLinux"),
+            path: "Sources/SessionUsage"),
     ])

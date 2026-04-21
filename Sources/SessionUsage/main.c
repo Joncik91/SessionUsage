@@ -8,10 +8,10 @@
 #include <string.h>
 #include <unistd.h>
 
-#define CODEXBAR_REFRESH_SECONDS 120
-#define CODEXBAR_DEFAULT_PROVIDERS "claude,copilot"
-#define CODEXBAR_MENU_ICON_SIZE 16
-#define CODEXBAR_LOGO_ALPHA_TRIM_THRESHOLD 8
+#define SESSIONUSAGE_REFRESH_SECONDS 120
+#define SESSIONUSAGE_DEFAULT_PROVIDERS "claude,copilot"
+#define SESSIONUSAGE_MENU_ICON_SIZE 16
+#define SESSIONUSAGE_LOGO_ALPHA_TRIM_THRESHOLD 8
 #define SESSIONUSAGE_APP_NAME "SessionUsage"
 
 typedef struct {
@@ -21,11 +21,26 @@ typedef struct {
     gchar *icon_path;
     gchar *icon_theme_path;
     gchar *icon_name;
-} CodexBarLinuxState;
+} SessionUsageState;
 
 static gboolean refresh_indicator(gpointer user_data);
 static void refresh_clicked_cb(GtkWidget *widget, gpointer user_data);
 static void quit_clicked_cb(GtkWidget *widget, gpointer user_data);
+
+static const gchar *env_with_fallback(const gchar *preferred_key, const gchar *legacy_key)
+{
+    const gchar *value = g_getenv(preferred_key);
+    if (value != NULL && *value != '\0') {
+        return value;
+    }
+
+    value = g_getenv(legacy_key);
+    if (value != NULL && *value != '\0') {
+        return value;
+    }
+
+    return NULL;
+}
 
 static gchar *duplicate_line(const gchar *start, gsize length)
 {
@@ -78,7 +93,7 @@ static gboolean is_regular_file(const gchar *path)
 
 static gchar *resolve_icon_path(void)
 {
-    const gchar *env_path = g_getenv("CODEXBAR_ICON");
+    const gchar *env_path = env_with_fallback("SESSIONUSAGE_ICON", "CODEXBAR_ICON");
     if (is_regular_file(env_path)) {
         return g_strdup(env_path);
     }
@@ -96,6 +111,10 @@ static gchar *resolve_icon_path(void)
         g_build_filename(build_dir, "sessionusage-symbolic.svg", NULL),
         g_build_filename(project_dir, "sessionusage-symbolic.svg", NULL),
         g_build_filename(repo_dir, "sessionusage-symbolic.svg", NULL),
+        g_build_filename(self_dir, "sessionusage.png", NULL),
+        g_build_filename(build_dir, "sessionusage.png", NULL),
+        g_build_filename(project_dir, "sessionusage.png", NULL),
+        g_build_filename(repo_dir, "sessionusage.png", NULL),
         g_build_filename(self_dir, "codexbar.png", NULL),
         g_build_filename(build_dir, "codexbar.png", NULL),
         g_build_filename(project_dir, "codexbar.png", NULL),
@@ -130,30 +149,54 @@ static gchar *resolve_icon_path(void)
 
 static gchar *resolve_cli_path(void)
 {
-    const gchar *env_path = g_getenv("CODEXBAR_CLI");
+    const gchar *env_path = env_with_fallback("SESSIONUSAGE_CLI", "CODEXBAR_CLI");
     if (env_path != NULL && *env_path != '\0' && g_file_test(env_path, G_FILE_TEST_IS_EXECUTABLE)) {
         return g_strdup(env_path);
     }
 
     gchar *self_dir = resolve_executable_directory();
     if (self_dir != NULL) {
-        gchar *sibling_cli = g_build_filename(self_dir, "CodexBarCLI", NULL);
+        gchar *sibling_cli = g_build_filename(self_dir, "SessionUsageCLI", NULL);
         if (g_file_test(sibling_cli, G_FILE_TEST_IS_EXECUTABLE)) {
             g_free(self_dir);
             return sibling_cli;
         }
         g_free(sibling_cli);
 
-        gchar *sibling_alias = g_build_filename(self_dir, "codexbar", NULL);
+        gchar *sibling_alias = g_build_filename(self_dir, "sessionusage-cli", NULL);
         if (g_file_test(sibling_alias, G_FILE_TEST_IS_EXECUTABLE)) {
             g_free(self_dir);
             return sibling_alias;
         }
         g_free(sibling_alias);
+
+        gchar *legacy_alias = g_build_filename(self_dir, "codexbar", NULL);
+        if (g_file_test(legacy_alias, G_FILE_TEST_IS_EXECUTABLE)) {
+            g_free(self_dir);
+            return legacy_alias;
+        }
+        g_free(legacy_alias);
+
+        gchar *legacy_cli = g_build_filename(self_dir, "CodexBarCLI", NULL);
+        if (g_file_test(legacy_cli, G_FILE_TEST_IS_EXECUTABLE)) {
+            g_free(self_dir);
+            return legacy_cli;
+        }
+        g_free(legacy_cli);
         g_free(self_dir);
     }
 
-    gchar *path_cli = g_find_program_in_path("codexbar");
+    gchar *path_cli = g_find_program_in_path("sessionusage-cli");
+    if (path_cli != NULL) {
+        return path_cli;
+    }
+
+    path_cli = g_find_program_in_path("codexbar");
+    if (path_cli != NULL) {
+        return path_cli;
+    }
+
+    path_cli = g_find_program_in_path("SessionUsageCLI");
     if (path_cli != NULL) {
         return path_cli;
     }
@@ -163,22 +206,22 @@ static gchar *resolve_cli_path(void)
 
 static gchar *resolve_provider_csv(void)
 {
-    const gchar *providers = g_getenv("CODEXBAR_PROVIDERS");
+    const gchar *providers = env_with_fallback("SESSIONUSAGE_PROVIDERS", "CODEXBAR_PROVIDERS");
     if (providers != NULL && *providers != '\0') {
         return g_strdup(providers);
     }
 
-    const gchar *provider = g_getenv("CODEXBAR_PROVIDER");
+    const gchar *provider = env_with_fallback("SESSIONUSAGE_PROVIDER", "CODEXBAR_PROVIDER");
     if (provider != NULL && *provider != '\0') {
         return g_strdup(provider);
     }
 
-    return g_strdup(CODEXBAR_DEFAULT_PROVIDERS);
+    return g_strdup(SESSIONUSAGE_DEFAULT_PROVIDERS);
 }
 
 static gboolean claude_oauth_credentials_available(void)
 {
-    const gchar *oauth_token = g_getenv("CODEXBAR_CLAUDE_OAUTH_TOKEN");
+    const gchar *oauth_token = env_with_fallback("SESSIONUSAGE_CLAUDE_OAUTH_TOKEN", "CODEXBAR_CLAUDE_OAUTH_TOKEN");
     if (oauth_token != NULL && *oauth_token != '\0') {
         return TRUE;
     }
@@ -220,7 +263,7 @@ static gchar *format_provider_error(const gchar *provider, const gchar *error_me
                error_message != NULL &&
                strstr(error_message, "No available fetch strategy for copilot") != NULL) {
         detail = g_strdup(
-            "Copilot unavailable: sign in with `gh auth login`, or set COPILOT_API_TOKEN or providers[].apiKey in ~/.codexbar/config.json.");
+            "Copilot unavailable: sign in with `gh auth login`, or set COPILOT_API_TOKEN or providers[].apiKey in ~/.sessionusage/config.json (legacy ~/.codexbar/config.json still works).");
     } else {
         detail = g_strdup(error_message != NULL ? error_message : "Unknown error");
     }
@@ -397,7 +440,7 @@ static gchar *resolve_provider_logo_path(const gchar *logo_filename)
         preferred_filenames[0] = g_strdup(logo_filename);
     }
 
-    const gchar *env_dir = g_getenv("CODEXBAR_PROVIDER_ICONS_DIR");
+    const gchar *env_dir = env_with_fallback("SESSIONUSAGE_PROVIDER_ICONS_DIR", "CODEXBAR_PROVIDER_ICONS_DIR");
     if (env_dir != NULL && *env_dir != '\0') {
         for (gint index = 0; preferred_filenames[index] != NULL; index++) {
             gchar *candidate = g_build_filename(env_dir, preferred_filenames[index], NULL);
@@ -552,7 +595,7 @@ static GdkPixbuf *trim_transparent_padding(GdkPixbuf *pixbuf)
     for (gint y = 0; y < height; y++) {
         for (gint x = 0; x < width; x++) {
             guchar *pixel = pixels + (y * rowstride) + (x * channels);
-            if (pixel[3] < CODEXBAR_LOGO_ALPHA_TRIM_THRESHOLD) {
+            if (pixel[3] < SESSIONUSAGE_LOGO_ALPHA_TRIM_THRESHOLD) {
                 continue;
             }
 
@@ -690,13 +733,13 @@ static GtkWidget *create_theme_icon_image(const gchar *preferred_name, const gch
 static GtkWidget *create_provider_badge_image(const gchar *provider_name)
 {
     const ProviderVisualStyle *style = provider_visual_style_for_name(provider_name);
-    GdkPixbuf *pixbuf = create_provider_logo_badge_pixbuf(style, CODEXBAR_MENU_ICON_SIZE);
+    GdkPixbuf *pixbuf = create_provider_logo_badge_pixbuf(style, SESSIONUSAGE_MENU_ICON_SIZE);
     if (pixbuf == NULL) {
         gchar *badge_text = style != NULL ? g_strdup(style->badge_text) : fallback_badge_text(provider_name);
         guint8 red = style != NULL ? style->red : 71;
         guint8 green = style != NULL ? style->green : 85;
         guint8 blue = style != NULL ? style->blue : 105;
-        pixbuf = create_badge_pixbuf(badge_text, red, green, blue, CODEXBAR_MENU_ICON_SIZE);
+        pixbuf = create_badge_pixbuf(badge_text, red, green, blue, SESSIONUSAGE_MENU_ICON_SIZE);
         g_free(badge_text);
     }
 
@@ -707,7 +750,7 @@ static GtkWidget *create_provider_badge_image(const gchar *provider_name)
     return image;
 }
 
-static GtkWidget *create_app_icon_image(CodexBarLinuxState *state, gint size)
+static GtkWidget *create_app_icon_image(SessionUsageState *state, gint size)
 {
     if (state != NULL && state->icon_path != NULL) {
         GError *error = NULL;
@@ -837,7 +880,7 @@ static gboolean parse_provider_payloads(
     GError *parse_error = NULL;
     if (!json_parser_load_from_data(parser, json_text, -1, &parse_error)) {
         *error_message_out = g_strdup_printf(
-            "Unable to parse CodexBarCLI JSON output: %s",
+            "Unable to parse SessionUsageCLI JSON output: %s",
             parse_error != NULL ? parse_error->message : "unknown error");
         g_clear_error(&parse_error);
         g_object_unref(parser);
@@ -846,14 +889,14 @@ static gboolean parse_provider_payloads(
 
     JsonNode *root = json_parser_get_root(parser);
     if (root == NULL || !JSON_NODE_HOLDS_ARRAY(root)) {
-        *error_message_out = g_strdup("CodexBarCLI JSON output did not contain a payload array.");
+        *error_message_out = g_strdup("SessionUsageCLI JSON output did not contain a payload array.");
         g_object_unref(parser);
         return FALSE;
     }
 
     JsonArray *payloads = json_node_get_array(root);
     if (payloads == NULL || json_array_get_length(payloads) == 0) {
-        *error_message_out = g_strdup("CodexBarCLI JSON output was empty.");
+        *error_message_out = g_strdup("SessionUsageCLI JSON output was empty.");
         g_object_unref(parser);
         return FALSE;
     }
@@ -1008,7 +1051,7 @@ static gboolean parse_provider_payloads(
 }
 
 static gboolean run_cli_with_format(
-    CodexBarLinuxState *state,
+    SessionUsageState *state,
     const gchar *provider,
     const gchar *format,
     gboolean allow_stdout_on_failure,
@@ -1050,7 +1093,7 @@ static gboolean run_cli_with_format(
 
     if (!spawned) {
         *error_message = g_strdup_printf(
-            "Failed to launch CodexBarCLI: %s",
+            "Failed to launch SessionUsageCLI: %s",
             spawn_error != NULL ? spawn_error->message : "unknown error");
         g_clear_error(&spawn_error);
         g_free(stdout_text);
@@ -1069,7 +1112,7 @@ static gboolean run_cli_with_format(
         const gchar *details = stderr_text != NULL && *stderr_text != '\0'
             ? stderr_text
             : (exit_error != NULL ? exit_error->message : "unknown error");
-        *error_message = g_strdup_printf("CodexBarCLI exited with an error: %s", details);
+        *error_message = g_strdup_printf("SessionUsageCLI exited with an error: %s", details);
         g_clear_error(&exit_error);
         g_free(stdout_text);
         g_free(stderr_text);
@@ -1081,7 +1124,7 @@ static gboolean run_cli_with_format(
     return TRUE;
 }
 
-static gboolean run_cli(CodexBarLinuxState *state, const gchar *provider, gchar **output, gchar **error_message)
+static gboolean run_cli(SessionUsageState *state, const gchar *provider, gchar **output, gchar **error_message)
 {
     return run_cli_with_format(state, provider, "text", FALSE, output, error_message);
 }
@@ -1176,12 +1219,12 @@ static gchar *provider_header_markup(const gchar *header)
     return markup;
 }
 
-static GtkWidget *build_menu(CodexBarLinuxState *state, const gchar *content, gboolean is_error)
+static GtkWidget *build_menu(SessionUsageState *state, const gchar *content, gboolean is_error)
 {
     GtkWidget *menu = gtk_menu_new();
     gboolean last_was_divider = TRUE;
 
-    append_header_row(menu, "<b>" SESSIONUSAGE_APP_NAME "</b>", create_app_icon_image(state, CODEXBAR_MENU_ICON_SIZE));
+    append_header_row(menu, "<b>" SESSIONUSAGE_APP_NAME "</b>", create_app_icon_image(state, SESSIONUSAGE_MENU_ICON_SIZE));
     append_disabled_row(menu, is_error ? "Linux tray status" : "Linux tray usage");
 
     GtkWidget *top_separator = gtk_separator_menu_item_new();
@@ -1250,7 +1293,7 @@ static GtkWidget *build_menu(CodexBarLinuxState *state, const gchar *content, gb
     return menu;
 }
 
-static void apply_menu(CodexBarLinuxState *state, GtkWidget *menu)
+static void apply_menu(SessionUsageState *state, GtkWidget *menu)
 {
     app_indicator_set_menu(state->indicator, GTK_MENU(menu));
     if (state->menu != NULL) {
@@ -1262,14 +1305,14 @@ static void apply_menu(CodexBarLinuxState *state, GtkWidget *menu)
 
 static gboolean refresh_indicator(gpointer user_data)
 {
-    CodexBarLinuxState *state = (CodexBarLinuxState *) user_data;
+    SessionUsageState *state = (SessionUsageState *) user_data;
 
     if (state->cli_path == NULL) {
         app_indicator_set_status(state->indicator, APP_INDICATOR_STATUS_ATTENTION);
         app_indicator_set_label(state->indicator, "ERR", "ERR");
         apply_menu(state, build_menu(
             state,
-            "CodexBarCLI was not found.\nSet CODEXBAR_CLI or place CodexBarCLI next to CodexBarLinux.",
+            "SessionUsageCLI was not found.\nSet SESSIONUSAGE_CLI (or legacy CODEXBAR_CLI), or place SessionUsageCLI next to SessionUsage.",
             TRUE));
         return TRUE;
     }
@@ -1382,7 +1425,7 @@ static void refresh_clicked_cb(GtkWidget *widget, gpointer user_data)
 static void quit_clicked_cb(GtkWidget *widget, gpointer user_data)
 {
     (void) widget;
-    CodexBarLinuxState *state = (CodexBarLinuxState *) user_data;
+    SessionUsageState *state = (SessionUsageState *) user_data;
     if (state->menu != NULL) {
         g_object_unref(state->menu);
         state->menu = NULL;
@@ -1395,7 +1438,7 @@ int main(int argc, char **argv)
     (void) argv;
     gtk_init(&argc, &argv);
 
-    CodexBarLinuxState *state = g_new0(CodexBarLinuxState, 1);
+    SessionUsageState *state = g_new0(SessionUsageState, 1);
     state->cli_path = resolve_cli_path();
     state->icon_path = resolve_icon_path();
     if (state->icon_path != NULL) {
@@ -1422,7 +1465,7 @@ int main(int argc, char **argv)
     app_indicator_set_title(state->indicator, SESSIONUSAGE_APP_NAME);
 
     refresh_indicator(state);
-    g_timeout_add_seconds(CODEXBAR_REFRESH_SECONDS, refresh_indicator, state);
+    g_timeout_add_seconds(SESSIONUSAGE_REFRESH_SECONDS, refresh_indicator, state);
     gtk_main();
 
     g_free(state->icon_name);

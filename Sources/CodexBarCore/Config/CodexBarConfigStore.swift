@@ -8,11 +8,11 @@ public enum CodexBarConfigStoreError: LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .invalidURL:
-            "Invalid CodexBar config path."
+            "Invalid SessionUsage config path."
         case let .decodeFailed(details):
-            "Failed to decode CodexBar config: \(details)"
+            "Failed to decode SessionUsage config: \(details)"
         case let .encodeFailed(details):
-            "Failed to encode CodexBar config: \(details)"
+            "Failed to encode SessionUsage config: \(details)"
         }
     }
 }
@@ -27,8 +27,9 @@ public struct CodexBarConfigStore: @unchecked Sendable {
     }
 
     public func load() throws -> CodexBarConfig? {
-        guard self.fileManager.fileExists(atPath: self.fileURL.path) else { return nil }
-        let data = try Data(contentsOf: self.fileURL)
+        let resolvedURL = self.resolvedLoadURL()
+        guard self.fileManager.fileExists(atPath: resolvedURL.path) else { return nil }
+        let data = try Data(contentsOf: resolvedURL)
         let decoder = JSONDecoder()
         do {
             let decoded = try decoder.decode(CodexBarConfig.self, from: data)
@@ -40,6 +41,13 @@ public struct CodexBarConfigStore: @unchecked Sendable {
 
     public func loadOrCreateDefault() throws -> CodexBarConfig {
         if let existing = try self.load() {
+            if self.fileURL == Self.defaultURL(),
+               !self.fileManager.fileExists(atPath: self.fileURL.path),
+               let legacyURL = self.legacyDefaultURL,
+               self.fileManager.fileExists(atPath: legacyURL.path)
+            {
+                try self.save(existing)
+            }
             return existing
         }
         let config = CodexBarConfig.makeDefault()
@@ -72,8 +80,31 @@ public struct CodexBarConfigStore: @unchecked Sendable {
 
     public static func defaultURL(home: URL = FileManager.default.homeDirectoryForCurrentUser) -> URL {
         home
+            .appendingPathComponent(".sessionusage", isDirectory: true)
+            .appendingPathComponent("config.json")
+    }
+
+    public static func legacyDefaultURL(home: URL = FileManager.default.homeDirectoryForCurrentUser) -> URL {
+        home
             .appendingPathComponent(".codexbar", isDirectory: true)
             .appendingPathComponent("config.json")
+    }
+
+    private var legacyDefaultURL: URL? {
+        guard self.fileURL == Self.defaultURL() else { return nil }
+        return Self.legacyDefaultURL()
+    }
+
+    private func resolvedLoadURL() -> URL {
+        if self.fileManager.fileExists(atPath: self.fileURL.path) {
+            return self.fileURL
+        }
+        if let legacyURL = self.legacyDefaultURL,
+           self.fileManager.fileExists(atPath: legacyURL.path)
+        {
+            return legacyURL
+        }
+        return self.fileURL
     }
 
     private func applySecurePermissionsIfNeeded() throws {

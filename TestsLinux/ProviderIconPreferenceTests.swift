@@ -32,13 +32,13 @@ struct ProviderIconPreferenceTests {
     func trayOptimizesLogoFillAndCopilotUsageLabels() throws {
         let source = try String(contentsOf: Self.mainCURL, encoding: .utf8)
 
-        #expect(source.contains(#"#define CODEXBAR_MENU_ICON_SIZE 16"#))
-        #expect(source.contains(#"#define CODEXBAR_LOGO_ALPHA_TRIM_THRESHOLD 8"#))
-        #expect(source.contains(#"create_provider_logo_badge_pixbuf(style, CODEXBAR_MENU_ICON_SIZE)"#))
+        #expect(source.contains(#"#define SESSIONUSAGE_MENU_ICON_SIZE 16"#))
+        #expect(source.contains(#"#define SESSIONUSAGE_LOGO_ALPHA_TRIM_THRESHOLD 8"#))
+        #expect(source.contains(#"create_provider_logo_badge_pixbuf(style, SESSIONUSAGE_MENU_ICON_SIZE)"#))
         #expect(source.contains(#"gdk_pixbuf_new_subpixbuf"#))
         #expect(source.contains(#"gdk_pixbuf_scale_simple"#))
         #expect(source.contains(#"create_logo_chip_pixbuf(style->red, style->green, style->blue, size)"#))
-        #expect(source.contains(#"if (pixel[3] < CODEXBAR_LOGO_ALPHA_TRIM_THRESHOLD) {"#))
+        #expect(source.contains(#"if (pixel[3] < SESSIONUSAGE_LOGO_ALPHA_TRIM_THRESHOLD) {"#))
         #expect(source.contains(#"return badge;"#))
         #expect(source.contains(#"if (g_strcmp0(provider_id, "copilot") == 0) {"#))
         #expect(source.contains(#"return slot_index == 0 ? "Premium" : "Chat";"#))
@@ -94,7 +94,7 @@ struct ProviderIconPreferenceTests {
 
     private static let mainCURL = packageRootURL
         .appendingPathComponent("Sources", isDirectory: true)
-        .appendingPathComponent("CodexBarLinux", isDirectory: true)
+        .appendingPathComponent("SessionUsage", isDirectory: true)
         .appendingPathComponent("main.c", isDirectory: false)
 
     private static func pngDimensions(of url: URL) throws -> (width: UInt32, height: UInt32) {

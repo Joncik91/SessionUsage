@@ -5,7 +5,7 @@ import Glibc
 #endif
 import Foundation
 
-extension CodexBarCLI {
+extension SessionUsageCLI {
     static func writeStderr(_ string: String) {
         guard let data = string.data(using: .utf8) else { return }
         FileHandle.standardError.write(data)

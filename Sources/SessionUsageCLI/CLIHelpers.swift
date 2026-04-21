@@ -7,7 +7,7 @@ import Glibc
 #endif
 import Foundation
 
-extension CodexBarCLI {
+extension SessionUsageCLI {
     static func decodeProvider(from values: ParsedValues, config: CodexBarConfig) -> ProviderSelection {
         let rawOverride = values.options["provider"]?.last
         return Self.providerSelection(rawOverride: rawOverride, enabled: config.enabledProviders())
@@ -156,6 +156,8 @@ extension CodexBarCLI {
 
     static func resetTimeDisplayStyleFromDefaults() -> ResetTimeDisplayStyle {
         let domains = [
+            "dev.sessionusage",
+            "dev.sessionusage.debug",
             "com.steipete.codexbar",
             "com.steipete.codexbar.debug",
         ]
@@ -353,7 +355,7 @@ struct CLIArgumentError: LocalizedError {
 }
 
 #if DEBUG
-extension CodexBarCLI {
+extension SessionUsageCLI {
     static func _usageSignatureForTesting() -> CommandSignature {
         CommandSignature.describe(UsageOptions())
     }

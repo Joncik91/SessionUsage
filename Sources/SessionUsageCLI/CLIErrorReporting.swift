@@ -14,7 +14,7 @@ struct ProviderErrorPayload: Encodable {
     let kind: CLIErrorKind?
 }
 
-extension CodexBarCLI {
+extension SessionUsageCLI {
     static func makeErrorPayload(_ error: Error, kind: CLIErrorKind? = nil) -> ProviderErrorPayload {
         ProviderErrorPayload(
             code: self.mapError(error).rawValue,

@@ -16,7 +16,7 @@ AUTOSTART_ENTRY_PATH="${AUTOSTART_DIR}/sessionusage.desktop"
 log()  { printf '%s\n' "$*"; }
 
 find_running_pids() {
-    pgrep -f "${INSTALL_ROOT}/CodexBarLinux" || true
+    pgrep -f "${INSTALL_ROOT}/SessionUsage" || true
 }
 
 mapfile -t running_pids < <(find_running_pids | sort -u)

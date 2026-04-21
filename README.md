@@ -1,8 +1,6 @@
 # SessionUsage
 
-Linux-only tray app forked from CodexBar. It keeps AI provider usage visible from an AppIndicator menu by pairing a native GTK tray process (`CodexBarLinux`) with the shared Swift backend (`CodexBarCLI` / `CodexBarCore`).
-
-<img src="codexbar.png" alt="CodexBar menu screenshot" width="520" />
+Linux-only tray app forked from CodexBar. It keeps AI provider usage visible from an AppIndicator menu by pairing a native GTK tray process (`SessionUsage`) with the shared Swift backend (`SessionUsageCLI` / `CodexBarCore`).
 
 ## Requirements
 - Linux
@@ -21,7 +19,7 @@ This builds the release binaries, installs a user-local copy into `~/.local/shar
 It also starts the installed tray app right away. Pass `--no-launch` or `--no-autostart` if you want a lighter install step.
 
 ### First-time provider setup
-Make sure the provider tools you care about are already installed and signed in. SessionUsage reads the same local CLI/auth/config state as the shared CodexBar backend, including `~/.codexbar/config.json` where applicable.
+Make sure the provider tools you care about are already installed and signed in. SessionUsage prefers `~/.sessionusage/config.json` and still falls back to the legacy `~/.codexbar/config.json` when migrating an older setup.
 
 ### Remove the desktop install
 ```bash
@@ -31,12 +29,12 @@ Make sure the provider tools you care about are already installed and signed in.
 ### Build from source
 ```bash
 sudo apt install libgtk-3-dev libayatana-appindicator3-dev libjson-glib-dev
-swift build --product CodexBarCLI --product CodexBarLinux
-./.build/debug/CodexBarLinux
+swift build --product SessionUsageCLI --product SessionUsage
+./.build/debug/SessionUsage
 ```
 
-`CodexBarLinux` looks for `CodexBarCLI` next to the tray executable first, then falls back to `codexbar`/`CodexBarCLI` on `PATH`. You can also point it at a custom binary with `CODEXBAR_CLI=/path/to/CodexBarCLI`.
-The tray consumes `CodexBarCLI --format json`, uses the project icon when available, formats provider summaries as menu sections, refreshes every two minutes, and adds native **Refresh** and **Quit** actions.
+`SessionUsage` looks for `SessionUsageCLI` next to the tray executable first, then falls back to `sessionusage-cli` and the legacy `codexbar`/`CodexBarCLI` names on `PATH`. You can also point it at a custom binary with `SESSIONUSAGE_CLI=/path/to/SessionUsageCLI`.
+The tray consumes `SessionUsageCLI --format json`, uses the project icon when available, formats provider summaries as menu sections, refreshes every two minutes, and adds native **Refresh** and **Quit** actions.
 
 ## Commands
 
@@ -46,14 +44,14 @@ The tray consumes `CodexBarCLI --format json`, uses the project icon when availa
 | `./Scripts/install_desktop.sh --no-launch --no-autostart` | Install without immediately starting the tray or enabling login autostart |
 | `./Scripts/uninstall_desktop.sh` | Remove the local desktop install |
 | `./Scripts/compile_and_run.sh` | Build, test, stop any existing dev tray instance, then run the debug tray |
-| `swift build --product CodexBarCLI --product CodexBarLinux` | Build the CLI and Linux tray targets manually |
+| `swift build --product SessionUsageCLI --product SessionUsage` | Build the CLI and Linux tray targets manually |
 | `swift test` | Run the Linux-focused Swift test suite |
 | `sessionusage` | Launch the installed tray app after desktop installation |
 
 ## Architecture
 
-- `Sources/CodexBarLinux` contains the native GTK 3 + Ayatana AppIndicator tray shell.
-- `Sources/CodexBarCLI` exposes structured usage output consumed by the tray.
+- `Sources/SessionUsage` contains the native GTK 3 + Ayatana AppIndicator tray shell.
+- `Sources/SessionUsageCLI` exposes structured usage output consumed by the tray.
 - `Sources/CodexBarCore` contains provider integrations, auth discovery, and usage-fetch logic.
 - `Assets/ProviderIcons` contains the provider logos used in the Linux tray menu.
 - `Scripts/install_desktop.sh` installs a self-contained user-local app under XDG paths instead of requiring a long terminal command.
@@ -69,15 +67,10 @@ SessionUsage keeps the shared provider backend from CodexBar, including Linux-re
 - Local-first provider integrations such as CLI, OAuth, and API-token based usage probes.
 
 ## Privacy note
-Wondering if CodexBar scans your disk? It doesn’t crawl your filesystem; it reads a small set of known locations (browser cookies/local storage, local JSONL logs) when the related features are enabled. See the discussion and audit notes in [issue #12](https://github.com/steipete/CodexBar/issues/12).
-
-## Related
-- ✂️ [Trimmy](https://github.com/steipete/Trimmy) — “Paste once, run once.” Flatten multi-line shell snippets so they paste and run.
-- 🧳 [MCPorter](https://mcporter.dev) — TypeScript toolkit + CLI for Model Context Protocol servers.
-- 🧿 [oracle](https://askoracle.dev) — Ask the oracle when you're stuck. Invoke GPT-5 Pro with a custom context and files.
+SessionUsage does not crawl your filesystem. It reads a small set of known local locations such as provider cookies, local storage, and JSONL logs when the related provider integrations are enabled.
 
 ## Credits
-Inspired by [ccusage](https://github.com/ryoppippi/ccusage) (MIT), specifically the cost usage tracking.
+SessionUsage is a Linux-first fork of CodexBar and keeps the shared provider backend while replacing the original macOS app surface with a GTK tray app. It is also inspired by [ccusage](https://github.com/ryoppippi/ccusage) (MIT), specifically the cost usage tracking.
 
 ## License
-MIT • Peter Steinberger ([steipete](https://twitter.com/steipete))
+MIT

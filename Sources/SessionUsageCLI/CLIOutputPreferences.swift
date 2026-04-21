@@ -12,7 +12,7 @@ struct CLIOutputPreferences {
 
     static func from(values: ParsedValues) -> CLIOutputPreferences {
         let jsonOnly = values.flags.contains("jsonOnly")
-        let format = CodexBarCLI.decodeFormat(from: values)
+        let format = SessionUsageCLI.decodeFormat(from: values)
         let pretty = values.flags.contains("pretty")
         return CLIOutputPreferences(format: format, jsonOnly: jsonOnly, pretty: pretty)
     }

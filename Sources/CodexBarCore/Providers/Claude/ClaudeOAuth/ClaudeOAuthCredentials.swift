@@ -15,18 +15,24 @@ public enum ClaudeOAuthCredentialsStore {
     private static let credentialsPath = ".claude/.credentials.json"
     static let claudeKeychainService = "Claude Code-credentials"
     private static let cacheKey = KeychainCacheStore.Key.oauth(provider: .claude)
-    public static let environmentTokenKey = "CODEXBAR_CLAUDE_OAUTH_TOKEN"
-    public static let environmentScopesKey = "CODEXBAR_CLAUDE_OAUTH_SCOPES"
+    public static let environmentTokenKey = "SESSIONUSAGE_CLAUDE_OAUTH_TOKEN"
+    public static let legacyEnvironmentTokenKey = "CODEXBAR_CLAUDE_OAUTH_TOKEN"
+    public static let environmentScopesKey = "SESSIONUSAGE_CLAUDE_OAUTH_SCOPES"
+    public static let legacyEnvironmentScopesKey = "CODEXBAR_CLAUDE_OAUTH_SCOPES"
 
     // Claude CLI's OAuth client ID - this is a public identifier (not a secret).
     // It's the same client ID used by Claude Code CLI for OAuth PKCE flow.
     // Can be overridden via environment variable if Anthropic ever changes it.
     public static let defaultOAuthClientID = "9d1c250a-e61b-44d9-88ed-5944d1962f5e"
-    public static let environmentClientIDKey = "CODEXBAR_CLAUDE_OAUTH_CLIENT_ID"
+    public static let environmentClientIDKey = "SESSIONUSAGE_CLAUDE_OAUTH_CLIENT_ID"
+    public static let legacyEnvironmentClientIDKey = "CODEXBAR_CLAUDE_OAUTH_CLIENT_ID"
     private static let tokenRefreshEndpoint = "https://platform.claude.com/v1/oauth/token"
 
     private static var oauthClientID: String {
-        ProcessInfo.processInfo.environment[self.environmentClientIDKey]?
+        self.environmentValue(
+            preferredKey: self.environmentClientIDKey,
+            legacyKey: self.legacyEnvironmentClientIDKey,
+            environment: ProcessInfo.processInfo.environment)?
             .trimmingCharacters(in: .whitespacesAndNewlines)
             ?? self.defaultOAuthClientID
     }
@@ -1642,7 +1648,11 @@ public enum ClaudeOAuthCredentialsStore {
         -> ClaudeOAuthCredentials?
     {
         guard
-            let token = environment[self.environmentTokenKey]?.trimmingCharacters(
+            let token = self.environmentValue(
+                preferredKey: self.environmentTokenKey,
+                legacyKey: self.legacyEnvironmentTokenKey,
+                environment: environment)?
+                .trimmingCharacters(
                 in: .whitespacesAndNewlines),
             !token.isEmpty
         else {
@@ -1650,7 +1660,13 @@ public enum ClaudeOAuthCredentialsStore {
         }
 
         let scopes: [String] = {
-            guard let raw = environment[self.environmentScopesKey] else { return ["user:profile"] }
+            guard let raw = self.environmentValue(
+                preferredKey: self.environmentScopesKey,
+                legacyKey: self.legacyEnvironmentScopesKey,
+                environment: environment)
+            else {
+                return ["user:profile"]
+            }
             let parsed =
                 raw
                     .split(separator: ",")
@@ -1665,6 +1681,14 @@ public enum ClaudeOAuthCredentialsStore {
             expiresAt: Date.distantFuture,
             scopes: scopes,
             rateLimitTier: nil)
+    }
+
+    private static func environmentValue(
+        preferredKey: String,
+        legacyKey: String,
+        environment: [String: String]) -> String?
+    {
+        environment[preferredKey] ?? environment[legacyKey]
     }
 
     static func setCredentialsURLOverrideForTesting(_ url: URL?) {

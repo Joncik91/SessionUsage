@@ -1,7 +1,7 @@
 import CodexBarCore
 import Foundation
 import Testing
-@testable import CodexBarCLI
+@testable import SessionUsageCLI
 
 @Suite
 struct ProviderPayloadContractTests {
@@ -32,7 +32,7 @@ struct ProviderPayloadContractTests {
             openaiDashboard: nil,
             error: nil)
 
-        let encoded = try #require(CodexBarCLI.encodeJSON([payload], pretty: false))
+        let encoded = try #require(SessionUsageCLI.encodeJSON([payload], pretty: false))
         let root = try #require(Self.decodeJSONArray(encoded).first)
         let usage = try #require(root["usage"] as? [String: Any])
         let primary = try #require(usage["primary"] as? [String: Any])
@@ -49,7 +49,7 @@ struct ProviderPayloadContractTests {
 
     @Test
     func providerErrorPayloadJSON_includesStructuredErrorContext() throws {
-        let payload = CodexBarCLI.makeProviderErrorPayload(
+        let payload = SessionUsageCLI.makeProviderErrorPayload(
             provider: .copilot,
             account: nil,
             source: "api",
@@ -57,7 +57,7 @@ struct ProviderPayloadContractTests {
             error: NSError(domain: "Tests", code: 7, userInfo: [NSLocalizedDescriptionKey: "Missing token"]),
             kind: .provider)
 
-        let encoded = try #require(CodexBarCLI.encodeJSON([payload], pretty: false))
+        let encoded = try #require(SessionUsageCLI.encodeJSON([payload], pretty: false))
         let root = try #require(Self.decodeJSONArray(encoded).first)
         let error = try #require(root["error"] as? [String: Any])
 
@@ -98,7 +98,7 @@ struct ProviderPayloadContractTests {
             openaiDashboard: nil,
             error: nil)
 
-        let encoded = try #require(CodexBarCLI.encodeJSON([payload], pretty: false))
+        let encoded = try #require(SessionUsageCLI.encodeJSON([payload], pretty: false))
         let root = try #require(Self.decodeJSONArray(encoded).first)
         let usage = try #require(root["usage"] as? [String: Any])
         let primary = try #require(usage["primary"] as? [String: Any])

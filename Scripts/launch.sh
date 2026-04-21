@@ -4,8 +4,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-TRAY_BIN="${PROJECT_ROOT}/.build/debug/CodexBarLinux"
-CLI_BIN="${PROJECT_ROOT}/.build/debug/CodexBarCLI"
+TRAY_BIN="${PROJECT_ROOT}/.build/debug/SessionUsage"
+CLI_BIN="${PROJECT_ROOT}/.build/debug/SessionUsageCLI"
 SWIFTLY_ENV="${SWIFTLY_HOME_DIR:-$HOME/.local/share/swiftly}/env.sh"
 
 if [[ -f "${SWIFTLY_ENV}" ]]; then
@@ -15,7 +15,7 @@ if [[ -f "${SWIFTLY_ENV}" ]]; then
 fi
 
 find_running_pids() {
-    pgrep -f "${PROJECT_ROOT}/\\.build/(debug|release)/CodexBarLinux" || true
+    pgrep -f "${PROJECT_ROOT}/\\.build/(debug|release)/SessionUsage" || true
 }
 
 mapfile -t running_pids < <(find_running_pids | sort -u)
@@ -29,5 +29,5 @@ if [[ ! -x "${TRAY_BIN}" || ! -x "${CLI_BIN}" ]]; then
     exit 1
 fi
 
-echo "==> Launching CodexBarLinux"
-CODEXBAR_CLI="${CLI_BIN}" exec "${TRAY_BIN}"
+echo "==> Launching SessionUsage"
+SESSIONUSAGE_CLI="${CLI_BIN}" exec "${TRAY_BIN}"

@@ -1,42 +1,31 @@
 # Repository Guidelines
 
 ## Project Structure & Modules
-- `Sources/CodexBar`: Swift 6 menu bar app (usage/credits probes, icon renderer, settings). Keep changes small and reuse existing helpers.
-- `Tests/CodexBarTests`: XCTest coverage for usage parsing, status probes, icon patterns; mirror new logic with focused tests.
-- `Scripts`: build/package helpers (`package_app.sh`, `sign-and-notarize.sh`, `make_appcast.sh`, `build_icon.sh`, `compile_and_run.sh`).
-- `docs`: release notes and process (`docs/RELEASING.md`, screenshots). Root-level zips/appcast are generated artifacts—avoid editing except during releases.
+- `Sources/SessionUsage` contains the Linux GTK/AppIndicator tray shell.
+- `Sources/SessionUsageCLI` contains the Swift CLI surface that emits the structured payloads consumed by the tray.
+- `Sources/CodexBarCore` contains the shared provider/auth/config logic. Internal type names still use CodexBar in places; treat that as shared-core legacy, not a cue to reintroduce old branding in new public surfaces.
+- `TestsLinux` contains the active Swift Testing suite for the Linux fork.
+- `Scripts` contains the supported local workflows (`compile_and_run.sh`, `launch.sh`, `install_desktop.sh`, `uninstall_desktop.sh`, lint helpers).
 
 ## Build, Test, Run
-- Dev loop: `./Scripts/compile_and_run.sh` kills old instances, runs `swift build` + `swift test`, packages, relaunches `CodexBar.app`, and confirms it stays running.
-- Quick build/test: `swift build` (debug) or `swift build -c release`; `swift test` for the full XCTest suite.
-- Package locally: `./Scripts/package_app.sh` to refresh `CodexBar.app`, then restart with `pkill -x CodexBar || pkill -f CodexBar.app || true; cd /Users/steipete/Projects/codexbar && open -n /Users/steipete/Projects/codexbar/CodexBar.app`.
-- Release flow: `./Scripts/sign-and-notarize.sh` (arm64 notarized zip) and `./Scripts/make_appcast.sh <zip> <feed-url>`; follow validation steps in `docs/RELEASING.md`.
+- Preferred dev loop: `./Scripts/compile_and_run.sh`
+- Manual build: `swift build --product SessionUsageCLI --product SessionUsage`
+- Tests: `swift test`
+- Desktop install: `./Scripts/install_desktop.sh`
+- Desktop uninstall: `./Scripts/uninstall_desktop.sh`
 
 ## Coding Style & Naming
-- Enforce SwiftFormat/SwiftLint: run `swiftformat Sources Tests` and `swiftlint --strict`. 4-space indent, 120-char lines, explicit `self` is intentional—do not remove.
-- Favor small, typed structs/enums; maintain existing `MARK` organization. Use descriptive symbols; match current commit tone.
+- Keep changes small and reuse existing helpers before adding new abstractions.
+- Follow the existing Swift formatting and explicit-`self` style in shared code.
+- Prefer `SessionUsage` naming in user-facing surfaces, docs, scripts, env vars, and binaries.
+- Preserve legacy `CODEXBAR_*` / `~/.codexbar` compatibility when touching existing runtime/config paths unless a task explicitly removes compatibility.
 
 ## Testing Guidelines
-- Add/extend XCTest cases under `Tests/CodexBarTests/*Tests.swift` (`FeatureNameTests` with `test_caseDescription` methods).
-- Always run `swift test` (or `./Scripts/compile_and_run.sh`) before handoff; add fixtures for new parsing/formatting scenarios.
-- After any code change, run `pnpm check` and fix all reported format/lint issues before handoff.
-- macOS CI is brittle around headless AppKit status/menu tests. Prefer covering menu behavior through stable state/model seams (`MenuDescriptor`, `ProvidersPane`, `CodexAccountsSectionState`, etc.) instead of constructing live `NSStatusBar`/`NSMenu` flows unless the AppKit wiring itself is the thing under test.
-
-## Commit & PR Guidelines
-- Commit messages: short imperative clauses (e.g., “Improve usage probe”, “Fix icon dimming”); keep commits scoped.
-- PRs/patches should list summary, commands run, screenshots/GIFs for UI changes, and linked issue/reference when relevant.
+- Add focused Swift Testing coverage in `TestsLinux` for behavior changes.
+- Prefer testing structured seams and pure logic over fragile desktop-environment wiring.
+- Run the existing build/test flow after code changes before handoff.
 
 ## Agent Notes
-- Use the provided scripts and package manager (SwiftPM); avoid adding dependencies or tooling without confirmation.
-- Validate behavior against the freshly built bundle; restart via the pkill+open command above to avoid running stale binaries.
-- To guarantee the right bundle is running after a rebuild, use: `pkill -x CodexBar || pkill -f CodexBar.app || true; cd /Users/steipete/Projects/codexbar && open -n /Users/steipete/Projects/codexbar/CodexBar.app`.
-- After any code change that affects the app, always rebuild with `Scripts/package_app.sh` and restart the app using the command above before validating behavior.
-- If you edited code, run `scripts/compile_and_run.sh` before handoff; it kills old instances, builds, tests, packages, relaunches, and verifies the app stays running.
-- Per user request: after every edit (code or docs), rebuild and restart using `./Scripts/compile_and_run.sh` so the running app reflects the latest changes.
-- Release script: keep it in the foreground; do not background it—wait until it finishes.
-- Release keys: find in `~/.profile` if missing (Sparkle + App Store Connect).
-- Prefer modern SwiftUI/Observation macros: use `@Observable` models with `@State` ownership and `@Bindable` in views; avoid `ObservableObject`, `@ObservedObject`, and `@StateObject`.
-- Favor modern macOS 15+ APIs over legacy/deprecated counterparts when refactoring (Observation, new display link APIs, updated menu item styling, etc.).
-- Keep provider data siloed: when rendering usage or account info for a provider (Claude vs Codex), never display identity/plan fields sourced from a different provider.***
-- Claude CLI status line is custom + user-configurable; never rely on it for usage parsing.
-- Cookie imports: default Chrome-only when possible to avoid other browser prompts; override via browser list when needed.
+- This repo is Linux-first. Do not restore macOS app packaging, appcast, notarization, or Sparkle-era workflows unless explicitly asked.
+- Keep the tray shell presentation-focused; provider probing and parsing belong in Swift shared code.
+- When changing the tray runtime, preserve fallback behavior for legacy CLI/config/env names unless the task says otherwise.

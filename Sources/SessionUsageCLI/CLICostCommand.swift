@@ -2,13 +2,13 @@ import CodexBarCore
 import Commander
 import Foundation
 
-extension CodexBarCLI {
+extension SessionUsageCLI {
     private static let costSupportedProviders: Set<UsageProvider> = [.claude, .codex]
 
     static func runCost(_ values: ParsedValues) async {
         let output = CLIOutputPreferences.from(values: values)
-        let config = CodexBarCLI.loadConfig(output: output)
-        let selection = CodexBarCLI.decodeProvider(from: values, config: config)
+        let config = SessionUsageCLI.loadConfig(output: output)
+        let selection = SessionUsageCLI.decodeProvider(from: values, config: config)
         let providers = Self.costProviders(from: selection)
         let unsupported = selection.asList.filter { !Self.costSupportedProviders.contains($0) }
         if !unsupported.isEmpty {

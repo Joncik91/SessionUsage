@@ -14,7 +14,7 @@ import FoundationNetworking
 #endif
 
 @main
-enum CodexBarCLI {
+enum SessionUsageCLI {
     static func main() async {
         let rawArgv = Array(CommandLine.arguments.dropFirst())
         let argv = Self.effectiveArgv(rawArgv)

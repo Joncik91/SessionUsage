@@ -3,8 +3,8 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-TRAY_BIN="${ROOT_DIR}/.build/debug/CodexBarLinux"
-CLI_BIN="${ROOT_DIR}/.build/debug/CodexBarCLI"
+TRAY_BIN="${ROOT_DIR}/.build/debug/SessionUsage"
+CLI_BIN="${ROOT_DIR}/.build/debug/SessionUsageCLI"
 SWIFTLY_ENV="${SWIFTLY_HOME_DIR:-$HOME/.local/share/swiftly}/env.sh"
 
 log()  { printf '%s\n' "$*"; }
@@ -17,7 +17,7 @@ if [[ -f "${SWIFTLY_ENV}" ]]; then
 fi
 
 find_running_pids() {
-  pgrep -f "${ROOT_DIR}/\\.build/(debug|release)/CodexBarLinux" || true
+  pgrep -f "${ROOT_DIR}/\\.build/(debug|release)/SessionUsage" || true
 }
 
 stop_running_instances() {
@@ -26,7 +26,7 @@ stop_running_instances() {
     return 0
   fi
 
-  log "==> Stopping existing CodexBarLinux instances"
+  log "==> Stopping existing SessionUsage instances"
   for pid in "${pids[@]}"; do
     kill "${pid}" 2>/dev/null || true
   done
@@ -44,16 +44,16 @@ stop_running_instances() {
   done
 }
 
-log "==> Building CodexBarCLI + CodexBarLinux"
-swift build --product CodexBarCLI --product CodexBarLinux
+log "==> Building SessionUsageCLI + SessionUsage"
+swift build --product SessionUsageCLI --product SessionUsage
 
 log "==> Running tests"
 swift test
 
-[[ -x "${TRAY_BIN}" ]] || fail "CodexBarLinux binary not found at ${TRAY_BIN}"
-[[ -x "${CLI_BIN}" ]] || fail "CodexBarCLI binary not found at ${CLI_BIN}"
+[[ -x "${TRAY_BIN}" ]] || fail "SessionUsage binary not found at ${TRAY_BIN}"
+[[ -x "${CLI_BIN}" ]] || fail "SessionUsageCLI binary not found at ${CLI_BIN}"
 
 stop_running_instances
 
-log "==> Launching CodexBarLinux"
-CODEXBAR_CLI="${CLI_BIN}" exec "${TRAY_BIN}"
+log "==> Launching SessionUsage"
+SESSIONUSAGE_CLI="${CLI_BIN}" exec "${TRAY_BIN}"
