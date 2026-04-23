@@ -53,7 +53,8 @@ public enum ZaiSettingsError: LocalizedError, Sendable {
     public var errorDescription: String? {
         switch self {
         case .missingToken:
-            "z.ai API token not found. Set apiKey in ~/.sessionusage/config.json (legacy ~/.codexbar/config.json still works) or Z_AI_API_KEY."
+            "z.ai API token not found. Set apiKey in ~/.sessionusage/config.json "
+                + "(legacy ~/.codexbar/config.json still works) or Z_AI_API_KEY."
         }
     }
 }

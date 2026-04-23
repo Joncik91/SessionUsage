@@ -33,7 +33,8 @@ public enum SyntheticSettingsError: LocalizedError, Sendable {
     public var errorDescription: String? {
         switch self {
         case .missingToken:
-            "Synthetic API key not found. Set apiKey in ~/.sessionusage/config.json (legacy ~/.codexbar/config.json still works) or SYNTHETIC_API_KEY."
+            "Synthetic API key not found. Set apiKey in ~/.sessionusage/config.json "
+                + "(legacy ~/.codexbar/config.json still works) or SYNTHETIC_API_KEY."
         }
     }
 }
