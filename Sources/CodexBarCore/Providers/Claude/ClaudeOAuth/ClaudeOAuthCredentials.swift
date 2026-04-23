@@ -1652,9 +1652,8 @@ public enum ClaudeOAuthCredentialsStore {
                 preferredKey: self.environmentTokenKey,
                 legacyKey: self.legacyEnvironmentTokenKey,
                 environment: environment)?
-                .trimmingCharacters(
-                in: .whitespacesAndNewlines),
-            !token.isEmpty
+                .trimmingCharacters(in: .whitespacesAndNewlines),
+                !token.isEmpty
         else {
             return nil
         }
