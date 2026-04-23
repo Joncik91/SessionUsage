@@ -15,6 +15,13 @@ let sweetCookieKitDependency: Package.Dependency =
 
 let package = Package(
     name: "SessionUsage",
+    // macOS deployment target is driven by our dependencies: Commander 0.2.1
+    // requires macOS 14, SweetCookieKit 0.4.0 requires macOS 13. Without this
+    // declaration SwiftPM defaults to macOS 10.13 and `swift test` on macOS
+    // fails at dependency resolution.
+    platforms: [
+        .macOS(.v14),
+    ],
     dependencies: [
         .package(url: "https://github.com/steipete/Commander", from: "0.2.1"),
         .package(url: "https://github.com/apple/swift-log", from: "1.12.0"),
