@@ -2,74 +2,27 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="SessionUsage">
   <title>SessionUsage</title>
 
-  <!--
-    SessionUsage — a Linux GTK + AppIndicator tray app showing AI
-    provider usage at a glance.
-
-    The mark is what you actually see when you open the tray menu:
-    a tiny histogram of per-provider usage, sitting on a thin
-    baseline rule. Vertical bars, square caps, one peak slightly
-    off-centre to the right — the rhythm of real data, not a flat
-    or staircased aesthetic arrangement.
-
-    Substrate matches the portfolio: dark panel #0E0E0F, single
-    amber accent #E8954A, rx=48 corners.
-  -->
-
   <rect width="400" height="400" rx="48" fill="#0E0E0F"/>
 
-  <!--
-    Baseline rule. Amber at 60% opacity so it reads as a gridline
-    (subordinate to the data) rather than as a structural threshold.
-    Sits at y=300, leaving the bars rooted in the lower-half of the
-    canvas and giving the chart the headroom a real status display
-    needs.
-
-    Width: 240 units, centred — leaves 80 units of negative space
-    on each side, so the chart feels framed rather than crowding
-    the rounded corners.
-  -->
   <line x1="80" y1="300" x2="320" y2="300"
         stroke="#E8954A" stroke-width="3"
         stroke-linecap="square" opacity="0.6"/>
 
-  <!--
-    Five vertical bars representing a glance at provider usage.
-
-    Heights chosen to look like real data: tall, short, TALLEST,
-    medium, short. The peak (bar #3) is slightly right of geometric
-    centre — perfect symmetry would kill the data feel.
-
-    Bars all sit on baseline y=300 and rise upward. Stroke-width
-    36 (9% of canvas width) keeps each bar emphatic at favicon size.
-    Square caps (the brutalist choice) — rounded caps would read as
-    a friendly chart-widget; this is a system-tray utility.
-
-    x-positions evenly distributed across 240-unit baseline:
-      bar 1: x=104  height 110  →  top at y=190
-      bar 2: x=152  height  56  →  top at y=244
-      bar 3: x=200  height 168  →  top at y=132   ← the peak
-      bar 4: x=248  height  90  →  top at y=210
-      bar 5: x=296  height  42  →  top at y=258
-  -->
-  <g stroke="#E8954A" stroke-width="36" stroke-linecap="square">
-    <line x1="104" y1="300" x2="104" y2="190"/>
-    <line x1="152" y1="300" x2="152" y2="244"/>
-    <line x1="200" y1="300" x2="200" y2="132"/>
-    <line x1="248" y1="300" x2="248" y2="210"/>
-    <line x1="296" y1="300" x2="296" y2="258"/>
+  <!-- Bars: the peak (bar 3) gets a heavier stroke than its neighbours,
+       so it dominates by both height AND weight — the eye lands on it
+       immediately. Other four bars stay at base weight. -->
+  <g stroke="#E8954A" stroke-linecap="square">
+    <line x1="104" y1="300" x2="104" y2="190" stroke-width="36"/>
+    <line x1="152" y1="300" x2="152" y2="244" stroke-width="36"/>
+    <line x1="200" y1="300" x2="200" y2="132" stroke-width="40"/>
+    <line x1="248" y1="300" x2="248" y2="210" stroke-width="36"/>
+    <line x1="296" y1="300" x2="296" y2="258" stroke-width="36"/>
   </g>
 
-  <!--
-    The peak's high-water mark: a small amber square cap sitting
-    on top of bar #3. Slightly wider than the bar itself (52 units
-    vs the bar's 36) and 12 units tall. This is the one memorable
-    detail in the mark — at 32px it reads as a thickening at the
-    top of the tallest bar; at 160px it resolves as a deliberate
-    marker that says "your peak right now."
+  <!-- Peak high-water cap stays — its width matches the heavier peak bar. -->
+  <rect x="172" y="120" width="56" height="12" fill="#E8954A"/>
 
-    Centred horizontally on bar #3 (x=200): from x=174 to x=226.
-    Sits just above the bar's top at y=132, extending up to y=120.
-  -->
-  <rect x="174" y="120" width="52" height="12" fill="#E8954A"/>
+  <!-- Live-data cue: a tiny secondary marker just above the cap,
+       suggesting "trending up, not frozen." Reward at 160px+. -->
+  <rect x="194" y="104" width="12" height="6" fill="#E8954A" opacity="0.7"/>
 </svg>
