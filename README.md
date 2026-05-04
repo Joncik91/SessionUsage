@@ -1,13 +1,41 @@
+<div align="center">
+
+<img src="docs/logo.svg" alt="SessionUsage" width="160" height="160">
+
 # SessionUsage
 
-Linux-only tray app forked from CodexBar. It keeps AI provider usage visible from an AppIndicator menu by pairing a native GTK tray process (`SessionUsage`) with the shared Swift backend (`SessionUsageCLI` / `CodexBarCore`).
+[![Linux](https://img.shields.io/badge/platform-Linux-FCC624?logo=linux&logoColor=black)](https://www.linux.org/)
+[![Swift 6](https://img.shields.io/badge/swift-6-F05138?logo=swift&logoColor=white)](https://swift.org/)
+[![GTK 3](https://img.shields.io/badge/GTK-3-7AB3DD?logo=gtk&logoColor=white)](https://www.gtk.org/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-E8954A.svg)](LICENSE)
+[![Privacy: local-first](https://img.shields.io/badge/privacy-local--first-E8954A)]()
+[![Fork of CodexBar](https://img.shields.io/badge/fork%20of-CodexBar-E8954A)](https://github.com/MaybeYakuza/codexbar)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-E8954A.svg)](#)
+
+**See your AI provider usage from the Linux system tray, at a glance.**
+
+A Linux-only tray app forked from CodexBar. It keeps AI provider usage visible from an AppIndicator menu by pairing a native GTK tray process (`SessionUsage`) with the shared Swift backend (`SessionUsageCLI` / `CodexBarCore`).
+
+</div>
+
+## Table of Contents
+
+- [Requirements](#requirements)
+- [Quick Start](#quick-start)
+- [Commands](#commands)
+- [Architecture](#architecture)
+- [Providers](#providers)
+- [Features](#features)
+- [Privacy](#privacy)
+- [Credits](#credits)
+- [License](#license)
 
 ## Requirements
 - Linux
 - Swift 6
 - GTK 3 + Ayatana AppIndicator development packages
 
-## Quick start
+## Quick Start
 
 ### Install as a desktop app
 ```bash
@@ -66,11 +94,34 @@ SessionUsage keeps the shared provider backend from CodexBar, including Linux-re
 - Tray refresh, section headers, and project icon support.
 - Local-first provider integrations such as CLI, OAuth, and API-token based usage probes.
 
-## Privacy note
-SessionUsage does not crawl your filesystem. It reads a small set of known local locations such as provider cookies, local storage, and JSONL logs when the related provider integrations are enabled.
+## Privacy
+
+SessionUsage does **not** crawl your filesystem and **does not make
+network requests of its own** — every provider's usage figure comes
+from local config the provider's own CLI/desktop app already wrote.
+
+What it reads, only when that provider's integration is enabled:
+
+- Provider cookies, local-storage, and JSONL session logs.
+- Auth files written by the provider's first-party CLI (e.g.
+  `~/.claude/`, `~/.codeium/`, `~/.cursor/`).
+- The provider's CLI binary, when it offers a usage subcommand
+  (a few do; SessionUsage shells out, parses, displays).
+
+What it does **not** do:
+
+- It doesn't talk to any provider's API itself.
+- It doesn't ship telemetry, analytics, or crash reports anywhere.
+- It doesn't keep a remote database of your usage; the tray menu
+  is a fresh read every 2 minutes.
+
+If a provider's first-party CLI was already trustworthy enough for you
+to install, SessionUsage adds no new exposure — it's reading what they
+already wrote to disk.
 
 ## Credits
 SessionUsage is a Linux-first fork of CodexBar and keeps the shared provider backend while replacing the original macOS app surface with a GTK tray app. It is also inspired by [ccusage](https://github.com/ryoppippi/ccusage) (MIT), specifically the cost usage tracking.
 
 ## License
-MIT
+
+MIT — see [LICENSE](LICENSE).
