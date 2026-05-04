@@ -1,28 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="SessionUsage">
   <title>SessionUsage</title>
-
   <rect width="400" height="400" rx="48" fill="#0E0E0F"/>
 
-  <line x1="80" y1="300" x2="320" y2="300"
-        stroke="#E8954A" stroke-width="3"
-        stroke-linecap="square" opacity="0.6"/>
+  <!-- Almond-shaped eye outline: two arcs meeting at corners -->
+  <g fill="none" stroke="#E8954A" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Eye shape: top arc + bottom arc forming an almond -->
+    <path d="M 80 200 Q 200 100 320 200 Q 200 300 80 200 Z"
+          stroke-width="20"/>
 
-  <!-- Bars: the peak (bar 3) gets a heavier stroke than its neighbours,
-       so it dominates by both height AND weight — the eye lands on it
-       immediately. Other four bars stay at base weight. -->
-  <g stroke="#E8954A" stroke-linecap="square">
-    <line x1="104" y1="300" x2="104" y2="190" stroke-width="36"/>
-    <line x1="152" y1="300" x2="152" y2="244" stroke-width="36"/>
-    <line x1="200" y1="300" x2="200" y2="132" stroke-width="40"/>
-    <line x1="248" y1="300" x2="248" y2="210" stroke-width="36"/>
-    <line x1="296" y1="300" x2="296" y2="258" stroke-width="36"/>
+    <!-- Iris: stroked circle at the centre -->
+    <circle cx="200" cy="200" r="50" stroke-width="14"/>
   </g>
 
-  <!-- Peak high-water cap stays — its width matches the heavier peak bar. -->
-  <rect x="172" y="120" width="56" height="12" fill="#E8954A"/>
-
-  <!-- Live-data cue: a tiny secondary marker just above the cap,
-       suggesting "trending up, not frozen." Reward at 160px+. -->
-  <rect x="194" y="104" width="12" height="6" fill="#E8954A" opacity="0.7"/>
+  <!-- Pupil: small filled dot at the centre — the indicator -->
+  <circle cx="200" cy="200" r="14" fill="#E8954A"/>
 </svg>
